@@ -1,0 +1,34 @@
+# Visual & Subtitle Styling Configuration
+
+subtitles:
+  font_name: "Montserrat-Black"
+  font_size: 64
+  margin_bottom: 420 # distance from bottom in pixels (avoids YouTube Shorts UI buttons)
+  max_words_per_line: 4
+  max_lines: 2
+  
+  # Colors in ASS hexadecimal (&HAABBGGRR)
+  primary_color: "&H00FFFFFF"      # White
+  highlight_color: "&H0000FFFF"    # Bright Yellow (&H00FFFF00 in RGB -> &H0000FFFF in BGR)
+  outline_color: "&H00000000"      # Solid Black outline
+  back_color: "&H80000000"         # Semi-transparent shadow
+  
+  outline_width: 5.0
+  shadow_depth: 3.0
+  bold: true
+  alignment: 2                     # Center aligned (numpad 2 in ASS format)
+
+hook_banner:
+  enabled: true
+  height: 180                      # Height of the top hook box in px
+  background_color: "&H99000000"   # Dark semi-transparent
+  font_name: "Montserrat-Bold"
+  font_size: 42
+  text_color: "&H00FFFFFF"
+  padding: 24
+
+audio_mastering:
+  normalize_loudness: true
+  target_i: -14.0                  # YouTube loudness standard (-14 LUFS)
+  target_lra: 7.0
+  target_tp: -1.0

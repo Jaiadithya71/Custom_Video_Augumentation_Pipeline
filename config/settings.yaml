@@ -1,0 +1,45 @@
+# Global Configuration for Content Agent
+
+app:
+  name: "Content Agent"
+  version: "0.1.0"
+  output_dir: "./output"
+  temp_dir: "./temp"
+
+ingestion:
+  max_download_resolution: 1080
+  audio_sample_rate: 16000
+  download_sections: true
+
+transcription:
+  model_size: "base" # tiny, base, small, medium, large-v3
+  device: "auto"     # cuda or cpu
+  compute_type: "auto" # float16, int8_float16, int8
+  language: "en"
+
+hype_detection:
+  min_clip_duration: 30 # seconds
+  max_clip_duration: 55 # seconds
+  sliding_step: 5       # seconds
+  weights:
+    crowd_heatmap: 0.35
+    semantic_hook: 0.30
+    acoustic_rms: 0.15
+    pitch_variance: 0.10
+    visual_motion: 0.10
+  nms_overlap_threshold: 0.30
+  top_clips_count: 3
+
+video_engine:
+  target_width: 1080
+  target_height: 1920
+  target_fps: 30
+  face_tracking_smoothing: 0.15 # EMA alpha (lower = smoother)
+  enable_split_screen_for_two_speakers: true
+  enable_hook_banner: true
+  enable_karaoke_subtitles: true
+
+publishing:
+  channel_id: ""
+  default_visibility: "unlisted" # unlisted, private, public
+  made_for_kids: false
