@@ -27,7 +27,6 @@ class YouTubeDownloader:
             "quiet": True,
             "no_warnings": True,
             "extract_flat": False,
-            "nocheckcertificate": True,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -62,7 +61,6 @@ class YouTubeDownloader:
         ydl_opts = {
             "format": "bestaudio/best",
             "outtmpl": str(self.temp_dir / f"{video_id}_raw_audio.%(ext)s"),
-            "nocheckcertificate": True,
             "postprocessors": [
                 {
                     "key": "FFmpegExtractAudio",
@@ -110,7 +108,6 @@ class YouTubeDownloader:
             "format": f"bestvideo[height<={self.max_resolution}][ext=mp4]+bestaudio[ext=m4a]/best[height<={self.max_resolution}][ext=mp4]/best",
             "outtmpl": str(output_path),
             "merge_output_format": "mp4",
-            "nocheckcertificate": True,
             "quiet": False,
         }
 
@@ -133,7 +130,6 @@ class YouTubeDownloader:
             "outtmpl": str(out),
             "download_ranges": yt_dlp.utils.download_range_func(None, [(start_sec, end_sec)]),
             "force_keyframes_at_cuts": True,
-            "nocheckcertificate": True,
             "quiet": False,
         }
 

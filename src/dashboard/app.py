@@ -350,8 +350,8 @@ def delete_job(job_id: str):
 @app.route("/media/<path:filename>")
 def serve_media(filename: str):
     """Safely serves media files with byte-range support for video seeking."""
-    file_path = PROJECT_ROOT / filename
-    if not file_path.exists():
+    file_path = (PROJECT_ROOT / filename).resolve()
+    if not file_path.is_relative_to(PROJECT_ROOT.resolve()) or not file_path.is_file():
         return "File not found", 404
     return send_file(str(file_path), conditional=True)
 
