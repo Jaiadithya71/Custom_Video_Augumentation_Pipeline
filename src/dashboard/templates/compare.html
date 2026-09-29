@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Quality Comparison: Side-by-Side Mobile Inspector</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Mobile Smartphone Chassis */
+    .smartphone-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    .smartphone-chassis {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 9 / 19.5;
+      background: linear-gradient(145deg, #27272a 0%, #18181b 40%, #09090b 100%);
+      border-radius: 46px;
+      padding: 10px;
+      box-shadow: 
+        0 0 0 2px rgba(255, 255, 255, 0.14),
+        0 0 0 4px rgba(0, 0, 0, 0.85),
+        0 25px 70px -10px rgba(0, 0, 0, 0.95),
+        0 0 40px rgba(59, 130, 246, 0.12);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .smartphone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border-radius: 36px;
+      overflow: hidden;
+      user-select: none;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    /* Video Fitting Modes */
+    .video-fit-contain video {
+      object-fit: contain !important;
+    }
+    .video-fit-cover video {
+      object-fit: cover !important;
+    }
+
+    /* Side hardware buttons */
+    .chassis-btn-mute {
+      position: absolute;
+      left: -4px;
+      top: 90px;
+      width: 4px;
+      height: 26px;
+      background: #3f3f46;
+      border-radius: 3px 0 0 3px;
+    }
+    .chassis-btn-volup {
+      position: absolute;
+      left: -4px;
+      top: 130px;
+      width: 4px;
+      height: 44px;
+      background: #3f3f46;
+      border-radius: 3px 0 0 3px;
+    }
+    .chassis-btn-voldown {
+      position: absolute;
+      left: -4px;
+      top: 185px;
+      width: 4px;
+      height: 44px;
+      background: #3f3f46;
+      border-radius: 3px 0 0 3px;
+    }
+    .chassis-btn-power {
+      position: absolute;
+      right: -4px;
+      top: 140px;
+      width: 4px;
+      height: 60px;
+      background: #3f3f46;
+      border-radius: 0 3px 3px 0;
+    }
+
+    /* Dynamic Island */
+    .dynamic-island {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 24px;
+      background-color: #000;
+      border-radius: 20px;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+    }
+    .camera-lens {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #1e293b, #000);
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.2);
+    }
+    .speaker-slot {
+      width: 40px;
+      height: 3px;
+      background-color: #18181b;
+      border-radius: 2px;
+    }
+
+    /* Screen home indicator bar */
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 2px;
+      z-index: 40;
+      pointer-events: none;
+    }
+
+    /* Play Feedback Overlay Bubble */
+    .play-feedback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 50;
+      transition: opacity 0.25s ease;
+    }
+
+    /* Floating Center Play Button when paused */
+    .paused-play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 64px;
+      height: 64px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      z-index: 48;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .smartphone-screen:hover .paused-play-btn {
+      transform: translate(-50%, -50%) scale(1.08);
+      background: rgba(37, 99, 235, 0.85);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* UI Simulation Overlays */
+    .overlay-yt, .overlay-tiktok, .overlay-safe { display: none !important; }
+    [data-overlay="yt_shorts"] .overlay-yt { display: flex !important; }
+    [data-overlay="tiktok"] .overlay-tiktok { display: flex !important; }
+    [data-overlay="safe_zones"] .overlay-safe { display: flex !important; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col font-sans video-fit-contain">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <a href="/" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="Back to Dashboard">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </a>
+          <div>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              Production Quality Inspector
+            </h1>
+            <p class="text-xs text-slate-400">
+              Click any phone screen to play/pause, or use the Fullscreen / Theater button to view full 1080x1920 without any top/bottom cutoff.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MASTER CONTROLS -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <!-- Play / Pause Master -->
+        <button id="masterPlayBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-500/25 transition cursor-pointer">
+          <i data-lucide="play" id="playIcon" class="w-4 h-4 fill-current"></i>
+          <span id="playLabel">Play All Synced</span>
+        </button>
+
+        <!-- Fit / Fill Mode Toggle -->
+        <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/80 text-xs">
+          <span class="px-2 text-slate-400 text-[11px] font-medium">Framing:</span>
+          <button id="btnFitContain" onclick="setVideoFit('contain')" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-medium transition text-[11px] cursor-pointer" title="Fit full 9:16 video without any cutoff">
+            Fit 100% (No Cut)
+          </button>
+          <button id="btnFitCover" onclick="setVideoFit('cover')" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px] cursor-pointer" title="Fill entire phone screen (9:19.5)">
+            Fill Phone
+          </button>
+        </div>
+
+        <!-- Theater Mode Button -->
+        <button onclick="openTheaterModal(2)" class="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-600/25 text-xs font-semibold transition cursor-pointer" title="Open Full Screen Theater">
+          <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
+          <span>Theater Fullscreen</span>
+        </button>
+
+        <!-- Platform Mockup Overlay -->
+        <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/80 text-xs">
+          <span class="px-2 text-slate-400 text-[11px] font-medium">Overlay:</span>
+          <select id="overlaySelector" class="bg-transparent text-slate-200 outline-none pr-2 py-0.5 cursor-pointer text-[11px]">
+            <option value="none">Clean Video</option>
+            <option value="yt_shorts" selected>YouTube Shorts</option>
+            <option value="tiktok">TikTok</option>
+            <option value="safe_zones">Safe Margins</option>
+          </select>
+        </div>
+
+        <!-- Master Loop Toggle -->
+        <button id="loopToggleBtn" class="flex items-center gap-1 px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl border border-slate-700 text-xs font-medium transition cursor-pointer">
+          <i data-lucide="repeat" class="w-3.5 h-3.5"></i>
+          <span>Loop: On</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MASTER TIMELINE SCRUBBER -->
+    <div class="max-w-7xl mx-auto mt-3 pt-3 border-t border-slate-800/60 flex items-center gap-3">
+      <span id="currentTimeLabel" class="text-xs font-mono text-slate-400 w-12 text-right">00:00</span>
+      <div class="relative flex-1 group py-1">
+        <input id="masterScrubber" type="range" min="0" max="100" value="0" step="0.1"
+               class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:h-2 transition-all">
+      </div>
+      <span id="durationLabel" class="text-xs font-mono text-slate-400 w-12">00:27</span>
+    </div>
+  </header>
+
+  <!-- MAIN COMPARISON STAGE -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+      <!-- ============================================== -->
+      <!-- PHONE 1: AMATEUR BASELINE                      -->
+      <!-- ============================================== -->
+      <div class="smartphone-wrapper">
+        <div class="w-full flex items-center justify-between mb-3 px-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+            <span class="font-bold text-sm text-slate-200">Phone 1: Baseline</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openTheaterModal(0)" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition" title="Open Fullscreen Theater">
+              <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              Amateur
+            </span>
+          </div>
+        </div>
+
+        <div class="smartphone-chassis" id="phoneChassis1">
+          <div class="chassis-btn-mute"></div>
+          <div class="chassis-btn-volup"></div>
+          <div class="chassis-btn-voldown"></div>
+          <div class="chassis-btn-power"></div>
+
+          <!-- Clickable Screen -->
+          <div class="smartphone-screen group" id="screen1" onclick="toggleSinglePlay(0)" title="Click to Play / Pause Phone 1">
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="speaker-slot"></div>
+            </div>
+
+            <!-- Floating Center Play Icon (visible when paused) -->
+            <div id="pausedOverlay0" class="paused-play-btn">
+              <i data-lucide="play" class="w-7 h-7 fill-current ml-1"></i>
+            </div>
+
+            <div id="tapFeedback0" class="play-feedback opacity-0">
+              <div class="w-16 h-16 rounded-full bg-black/70 backdrop-blur border border-white/20 flex items-center justify-center text-white scale-90 transition-all">
+                <i data-lucide="play" id="tapFeedbackIcon0" class="w-8 h-8 fill-current"></i>
+              </div>
+            </div>
+
+            <!-- Video Player (object-contain preserves 100% top and bottom) -->
+            <video id="video1" class="w-full h-full object-contain bg-black" playsinline preload="auto">
+              <source src="/media/output/ULvplwBTbQk_short_1.mp4?v=sync1" type="video/mp4">
+            </video>
+
+            <!-- YouTube Shorts Overlay -->
+            <div class="overlay-yt absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-30">
+              <div class="flex items-center justify-between pt-6 text-white drop-shadow">
+                <span class="text-xs font-semibold">Shorts</span>
+                <i data-lucide="search" class="w-5 h-5"></i>
+              </div>
+              <div class="self-end flex flex-col items-center gap-4 pb-14 text-white drop-shadow">
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">94K</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">1.4K</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">Share</span>
+                </div>
+              </div>
+              <div class="pb-6 text-white drop-shadow max-w-[70%]">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px]">R</div>
+                  <span class="text-[11px] font-bold">@rajshamani</span>
+                </div>
+                <p class="text-[11px] line-clamp-2">Satellite Explosion in Orbit • Emergency Safe Haven #shorts</p>
+              </div>
+            </div>
+
+            <!-- Safe Zone Overlay -->
+            <div class="overlay-safe absolute inset-0 pointer-events-none z-30 border-2 border-dashed border-red-500/40">
+              <div class="absolute inset-x-0 top-0 h-[10%] bg-red-500/10 border-b border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Top UI Danger (10%)</div>
+              <div class="absolute inset-x-0 bottom-0 h-[22%] bg-red-500/10 border-t border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Bottom UI Danger (22%)</div>
+              <div class="absolute right-0 inset-y-0 w-[18%] bg-red-500/10 border-l border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Action Rail</div>
+              <div class="absolute inset-[22%_18%_10%_0%] border border-green-500/40 bg-green-500/5 flex items-center justify-center text-[10px] text-green-400 font-bold">Safe Zone</div>
+            </div>
+
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+
+        <!-- INDIVIDUAL CONTROLS FOR PHONE 1 -->
+        <div class="w-full mt-3 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <button onclick="toggleSinglePlay(0)" id="singlePlayBtn0" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition cursor-pointer">
+              <i data-lucide="play" id="singlePlayIcon0" class="w-3.5 h-3.5 fill-current"></i>
+              <span id="singlePlayLabel0">Play</span>
+            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleSingleMute(0)" id="muteBtn0" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Toggle Audio">
+                <i data-lucide="volume-2" id="muteIcon0" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openTheaterModal(0)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Full Screen Theater">
+                <i data-lucide="maximize" class="w-4 h-4"></i>
+              </button>
+              <button onclick="restartSingleVideo(0)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Restart Video">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <span id="singleTime0" class="text-[11px] font-mono text-slate-400">00:00 / 00:27</span>
+          </div>
+          <input id="singleScrubber0" type="range" min="0" max="100" value="0" step="0.1"
+                 class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                 oninput="onSingleScrub(0, this.value)">
+        </div>
+
+        <!-- Spec Breakdown -->
+        <div class="w-full mt-3 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5 text-[11px] space-y-2 text-slate-300">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Speaker Gating:</span>
+            <span class="text-rose-400 font-semibold">❌ None (Static Crop)</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Visual Movement:</span>
+            <span class="text-rose-400 font-semibold">❌ 0 Movement (Flat)</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Shot Cut Snapping:</span>
+            <span class="text-rose-400 font-semibold">❌ Raw Cut (Angle Bleed)</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Sound Design:</span>
+            <span class="text-rose-400 font-semibold">❌ Source Audio Only</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- PHONE 2: OPENSHORTS ENGINE                     -->
+      <!-- ============================================== -->
+      <div class="smartphone-wrapper">
+        <div class="w-full flex items-center justify-between mb-3 px-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span>
+            <span class="font-bold text-sm text-slate-200">Phone 2: OpenShorts</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openTheaterModal(1)" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition" title="Open Fullscreen Theater">
+              <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              OpenShorts 5.7k ⭐
+            </span>
+          </div>
+        </div>
+
+        <div class="smartphone-chassis" id="phoneChassis2">
+          <div class="chassis-btn-mute"></div>
+          <div class="chassis-btn-volup"></div>
+          <div class="chassis-btn-voldown"></div>
+          <div class="chassis-btn-power"></div>
+
+          <div class="smartphone-screen group" id="screen2" onclick="toggleSinglePlay(1)" title="Click to Play / Pause Phone 2">
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="speaker-slot"></div>
+            </div>
+
+            <div id="pausedOverlay1" class="paused-play-btn">
+              <i data-lucide="play" class="w-7 h-7 fill-current ml-1"></i>
+            </div>
+
+            <div id="tapFeedback1" class="play-feedback opacity-0">
+              <div class="w-16 h-16 rounded-full bg-black/70 backdrop-blur border border-white/20 flex items-center justify-center text-white scale-90 transition-all">
+                <i data-lucide="play" id="tapFeedbackIcon1" class="w-8 h-8 fill-current"></i>
+              </div>
+            </div>
+
+            <video id="video2" class="w-full h-full object-contain bg-black" playsinline preload="auto">
+              <source src="/media/output/demo_openshorts_edl.mp4?v=sync1" type="video/mp4">
+            </video>
+
+            <!-- YouTube Shorts Overlay -->
+            <div class="overlay-yt absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-30">
+              <div class="flex items-center justify-between pt-6 text-white drop-shadow">
+                <span class="text-xs font-semibold">Shorts</span>
+                <i data-lucide="search" class="w-5 h-5"></i>
+              </div>
+              <div class="self-end flex flex-col items-center gap-4 pb-14 text-white drop-shadow">
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">185K</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">3.8K</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">Share</span>
+                </div>
+              </div>
+              <div class="pb-6 text-white drop-shadow max-w-[70%]">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px]">R</div>
+                  <span class="text-[11px] font-bold">@rajshamani</span>
+                </div>
+                <p class="text-[11px] line-clamp-2">Satellite Explosion in Orbit • Emergency Safe Haven #shorts</p>
+              </div>
+            </div>
+
+            <!-- Safe Zone Overlay -->
+            <div class="overlay-safe absolute inset-0 pointer-events-none z-30 border-2 border-dashed border-red-500/40">
+              <div class="absolute inset-x-0 top-0 h-[10%] bg-red-500/10 border-b border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Top UI Danger (10%)</div>
+              <div class="absolute inset-x-0 bottom-0 h-[22%] bg-red-500/10 border-t border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Bottom UI Danger (22%)</div>
+              <div class="absolute right-0 inset-y-0 w-[18%] bg-red-500/10 border-l border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Action Rail</div>
+              <div class="absolute inset-[22%_18%_10%_0%] border border-green-500/40 bg-green-500/5 flex items-center justify-center text-[10px] text-green-400 font-bold">Safe Zone</div>
+            </div>
+
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+
+        <!-- INDIVIDUAL CONTROLS FOR PHONE 2 -->
+        <div class="w-full mt-3 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <button onclick="toggleSinglePlay(1)" id="singlePlayBtn1" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition cursor-pointer">
+              <i data-lucide="play" id="singlePlayIcon1" class="w-3.5 h-3.5 fill-current"></i>
+              <span id="singlePlayLabel1">Play</span>
+            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleSingleMute(1)" id="muteBtn1" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Toggle Audio">
+                <i data-lucide="volume-x" id="muteIcon1" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openTheaterModal(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Full Screen Theater">
+                <i data-lucide="maximize" class="w-4 h-4"></i>
+              </button>
+              <button onclick="restartSingleVideo(1)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Restart Video">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <span id="singleTime1" class="text-[11px] font-mono text-slate-400">00:00 / 00:27</span>
+          </div>
+          <input id="singleScrubber1" type="range" min="0" max="100" value="0" step="0.1"
+                 class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                 oninput="onSingleScrub(1, this.value)">
+        </div>
+
+        <div class="w-full mt-3 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5 text-[11px] space-y-2 text-slate-300">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Speaker Gating:</span>
+            <span class="text-blue-400 font-semibold">✅ Gated (14.4% &lt; 20% floor)</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Visual Movement:</span>
+            <span class="text-blue-400 font-semibold">✅ EDL Punch-in (45% anchor)</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Color Grading:</span>
+            <span class="text-blue-400 font-semibold">✅ Color Pop (Sat 1.25x)</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Subtitles:</span>
+            <span class="text-yellow-400 font-bold font-mono">Anton Uppercase (#FFE500)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- PHONE 3: HOTCLIP MASTER ENGINE                 -->
+      <!-- ============================================== -->
+      <div class="smartphone-wrapper">
+        <div class="w-full flex items-center justify-between mb-3 px-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+            <span class="font-bold text-sm text-slate-200">Phone 3: HotClip Master</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openTheaterModal(2)" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition" title="Open Fullscreen Theater">
+              <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              HotClip Master (Best)
+            </span>
+          </div>
+        </div>
+
+        <div class="smartphone-chassis" id="phoneChassis3">
+          <div class="chassis-btn-mute"></div>
+          <div class="chassis-btn-volup"></div>
+          <div class="chassis-btn-voldown"></div>
+          <div class="chassis-btn-power"></div>
+
+          <div class="smartphone-screen group ring-1 ring-emerald-500/30" id="screen3" onclick="toggleSinglePlay(2)" title="Click to Play / Pause Phone 3">
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+              <div class="speaker-slot"></div>
+            </div>
+
+            <div id="pausedOverlay2" class="paused-play-btn">
+              <i data-lucide="play" class="w-7 h-7 fill-current ml-1"></i>
+            </div>
+
+            <div id="tapFeedback2" class="play-feedback opacity-0">
+              <div class="w-16 h-16 rounded-full bg-black/70 backdrop-blur border border-white/20 flex items-center justify-center text-white scale-90 transition-all">
+                <i data-lucide="play" id="tapFeedbackIcon2" class="w-8 h-8 fill-current"></i>
+              </div>
+            </div>
+
+            <video id="video3" class="w-full h-full object-contain bg-black" playsinline preload="auto">
+              <source src="/media/output/demo_hotclip_master.mp4?v=sync1" type="video/mp4">
+            </video>
+
+            <!-- YouTube Shorts Overlay -->
+            <div class="overlay-yt absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-30">
+              <div class="flex items-center justify-between pt-6 text-white drop-shadow">
+                <span class="text-xs font-semibold">Shorts</span>
+                <i data-lucide="search" class="w-5 h-5"></i>
+              </div>
+              <div class="self-end flex flex-col items-center gap-4 pb-14 text-white drop-shadow">
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">340K</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">8.2K</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-9 h-9 rounded-full bg-slate-900/60 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-[10px]">Share</span>
+                </div>
+              </div>
+              <div class="pb-6 text-white drop-shadow max-w-[70%]">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[10px]">R</div>
+                  <span class="text-[11px] font-bold">@rajshamani</span>
+                </div>
+                <p class="text-[11px] line-clamp-2">Satellite Explosion in Orbit • Emergency Safe Haven #shorts</p>
+              </div>
+            </div>
+
+            <!-- Safe Zone Overlay -->
+            <div class="overlay-safe absolute inset-0 pointer-events-none z-30 border-2 border-dashed border-red-500/40">
+              <div class="absolute inset-x-0 top-0 h-[10%] bg-red-500/10 border-b border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Top UI Danger (10%)</div>
+              <div class="absolute inset-x-0 bottom-0 h-[22%] bg-red-500/10 border-t border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Bottom UI Danger (22%)</div>
+              <div class="absolute right-0 inset-y-0 w-[18%] bg-red-500/10 border-l border-red-500/30 flex items-center justify-center text-[9px] text-red-400 font-mono">Action Rail</div>
+              <div class="absolute inset-[22%_18%_10%_0%] border border-green-500/40 bg-green-500/5 flex items-center justify-center text-[10px] text-green-400 font-bold">Safe Zone</div>
+            </div>
+
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+
+        <!-- INDIVIDUAL CONTROLS FOR PHONE 3 -->
+        <div class="w-full mt-3 bg-slate-900 border border-emerald-950/80 rounded-2xl p-3 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <button onclick="toggleSinglePlay(2)" id="singlePlayBtn2" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition cursor-pointer">
+              <i data-lucide="play" id="singlePlayIcon2" class="w-3.5 h-3.5 fill-current"></i>
+              <span id="singlePlayLabel2">Play</span>
+            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleSingleMute(2)" id="muteBtn2" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Toggle Audio">
+                <i data-lucide="volume-x" id="muteIcon2" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openTheaterModal(2)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Full Screen Theater">
+                <i data-lucide="maximize" class="w-4 h-4"></i>
+              </button>
+              <button onclick="restartSingleVideo(2)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Restart Video">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <span id="singleTime2" class="text-[11px] font-mono text-slate-400">00:00 / 00:27</span>
+          </div>
+          <input id="singleScrubber2" type="range" min="0" max="100" value="0" step="0.1"
+                 class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                 oninput="onSingleScrub(2, this.value)">
+        </div>
+
+        <div class="w-full mt-3 bg-slate-900/60 border border-emerald-950/60 rounded-2xl p-3.5 text-[11px] space-y-2 text-slate-300">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Shot Cut Snapping:</span>
+            <span class="text-emerald-400 font-semibold">🌟 Snapped to Cut (71.84s)</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Visual Rhythm:</span>
+            <span class="text-emerald-400 font-semibold">🌟 10s Breathing + 1.10x Emphasis</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+            <span class="text-slate-400">Sound Design:</span>
+            <span class="text-emerald-400 font-semibold">🌟 Procedural Whoosh + Pop SFX</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Subtitles:</span>
+            <span class="text-emerald-300 font-medium font-mono">Mouth-to-Letter Sync (Flame Orange Pop)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COMPARISON MATRIX TABLE -->
+    <div class="mt-12 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 lg:p-8 backdrop-blur shadow-2xl">
+      <div class="mb-6">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <i data-lucide="layers" class="w-5 h-5 text-blue-400"></i>
+          Architectural Differentiation Matrix
+        </h2>
+        <p class="text-xs text-slate-400">How underlying computer vision, audio DSP, and rendering algorithms impact the final video.</p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase tracking-wider">
+              <th class="py-3 px-4">Quality Lever</th>
+              <th class="py-3 px-4 text-amber-400">Previous Baseline</th>
+              <th class="py-3 px-4 text-blue-400">OpenShorts (5.7k ⭐)</th>
+              <th class="py-3 px-4 text-emerald-400 font-bold">HotClip Master (257 ⭐)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 font-sans">
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-slate-200">Speaker Gating</td>
+              <td class="py-3.5 px-4 text-slate-400">Static single crop / Blind split</td>
+              <td class="py-3.5 px-4 text-slate-300">20% speech floor gating (Mouth variance + Audio RMS)</td>
+              <td class="py-3.5 px-4 text-emerald-300">Active speaker gating + Speaker tangle density limit</td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-slate-200">Shot Boundary Handling</td>
+              <td class="py-3.5 px-4 text-slate-400">Raw timestamp cut (ghost angle bleed)</td>
+              <td class="py-3.5 px-4 text-slate-300">Word-boundary snapped with symmetrical padding</td>
+              <td class="py-3.5 px-4 text-emerald-300 font-semibold">Camera cut snapping (TransNetV2 / Scene threshold gt(0.3))</td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-slate-200">Auto-Zoom & Rhythm</td>
+              <td class="py-3.5 px-4 text-slate-400">None (flat static picture)</td>
+              <td class="py-3.5 px-4 text-slate-300">Deterministic EDL punch-in (45% headroom anchor)</td>
+              <td class="py-3.5 px-4 text-emerald-300 font-semibold">10s Breathing Zoom (1.06x) + 0.4s Anticipatory push (1.10x)</td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-slate-200">Sound Design Layer</td>
+              <td class="py-3.5 px-4 text-slate-400">Original video audio only</td>
+              <td class="py-3.5 px-4 text-slate-300">Vocal level normalization</td>
+              <td class="py-3.5 px-4 text-emerald-300 font-semibold">Procedural FFmpeg Whoosh (cut) + Hook Pop + Sidechain Ducking</td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-slate-200">Quality Gate</td>
+              <td class="py-3.5 px-4 text-slate-400">None</td>
+              <td class="py-3.5 px-4 text-slate-300">Predicted score ranking dedupe (50% overlap suppression)</td>
+              <td class="py-3.5 px-4 text-emerald-300 font-semibold">Linting: Dangling openers ("So"), comma cuts, NG retake pruning</td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-slate-200">Subtitle Aesthetic</td>
+              <td class="py-3.5 px-4 text-slate-400">Word-by-word kinetic pop with emojis</td>
+              <td class="py-3.5 px-4 text-slate-300">Anton uppercase with #FFE500 yellow mouth-to-letter highlight</td>
+              <td class="py-3.5 px-4 text-emerald-300 font-semibold">Mouth-to-letter sync (Flame Orange pop, 114% scale, Inter/Arial)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================== -->
+  <!-- FULLSCREEN THEATER MODAL                       -->
+  <!-- ============================================== -->
+  <div id="theaterModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl hidden flex-col items-center justify-between p-4 md:p-6 transition-all duration-300">
+    <!-- Top Modal Bar -->
+    <div class="w-full max-w-5xl flex items-center justify-between text-white pb-3 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-bold text-slate-200" id="theaterTitle">Phone 3: HotClip Master</span>
+        <div class="flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800 text-xs">
+          <button onclick="switchTheaterVideo(0)" id="theaterBtn0" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">Baseline</button>
+          <button onclick="switchTheaterVideo(1)" id="theaterBtn1" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">OpenShorts</button>
+          <button onclick="switchTheaterVideo(2)" id="theaterBtn2" class="px-2.5 py-1 rounded bg-emerald-600 text-white font-medium transition">HotClip Master</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="toggleBrowserFullscreen()" class="p-2 hover:bg-white/10 rounded-lg transition" title="Toggle True Fullscreen (F)">
+          <i data-lucide="expand" class="w-5 h-5"></i>
+        </button>
+        <button onclick="closeTheaterModal()" class="p-2 hover:bg-red-500/20 text-slate-300 hover:text-red-400 rounded-lg transition" title="Close Theater (Esc)">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Theater Video Container (Full 9:16 Uncropped) -->
+    <div class="relative flex-1 flex items-center justify-center my-3 w-full max-h-[82vh]">
+      <div class="relative h-full aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/15">
+        <video id="theaterVideo" class="w-full h-full object-contain" playsinline controls>
+          <source src="/media/output/demo_hotclip_master.mp4?v=sync1" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <!-- Theater Bottom Info -->
+    <div class="w-full max-w-5xl flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/10">
+      <span>Keyboard Shortcuts: <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-[10px]">Space</kbd> Play/Pause &bull; <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-[10px]">F</kbd> True Fullscreen &bull; <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-[10px]">Esc</kbd> Close</span>
+      <span class="text-slate-300 font-mono">1080 &times; 1920 &bull; 60fps &bull; Full Uncropped View</span>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const video1 = document.getElementById("video1");
+    const video2 = document.getElementById("video2");
+    const video3 = document.getElementById("video3");
+    const videos = [video1, video2, video3];
+
+    const masterPlayBtn = document.getElementById("masterPlayBtn");
+    const playIcon = document.getElementById("playIcon");
+    const playLabel = document.getElementById("playLabel");
+    const masterScrubber = document.getElementById("masterScrubber");
+    const currentTimeLabel = document.getElementById("currentTimeLabel");
+    const durationLabel = document.getElementById("durationLabel");
+    const overlaySelector = document.getElementById("overlaySelector");
+    const loopToggleBtn = document.getElementById("loopToggleBtn");
+
+    let isMasterPlaying = false;
+    let isLooping = true;
+    let isScrubbing = false;
+
+    // Default: Contain 100% video to eliminate top/bottom cutoff
+    video1.muted = false;
+    video2.muted = true;
+    video3.muted = true;
+
+    // Toggle Framing: Fit 100% (contain) vs Fill Phone (cover)
+    function setVideoFit(mode) {
+      document.body.classList.remove('video-fit-contain', 'video-fit-cover');
+      document.body.classList.add(`video-fit-${mode}`);
+
+      const btnContain = document.getElementById("btnFitContain");
+      const btnCover = document.getElementById("btnFitCover");
+
+      if (mode === "contain") {
+        btnContain.className = "px-2.5 py-1 rounded-lg bg-blue-600 text-white font-medium transition text-[11px] cursor-pointer";
+        btnCover.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px] cursor-pointer";
+      } else {
+        btnCover.className = "px-2.5 py-1 rounded-lg bg-blue-600 text-white font-medium transition text-[11px] cursor-pointer";
+        btnContain.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px] cursor-pointer";
+      }
+    }
+
+    function formatTime(sec) {
+      if (isNaN(sec) || sec === Infinity) return "00:00";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function toggleSinglePlay(idx) {
+      const vid = videos[idx];
+      const pausedOverlay = document.getElementById(`pausedOverlay${idx}`);
+      const icon = document.getElementById(`singlePlayIcon${idx}`);
+      const label = document.getElementById(`singlePlayLabel${idx}`);
+      const feedback = document.getElementById(`tapFeedback${idx}`);
+      const feedbackIcon = document.getElementById(`tapFeedbackIcon${idx}`);
+
+      if (vid.paused) {
+        vid.play().then(() => {
+          pausedOverlay.style.display = "none";
+          label.textContent = "Pause";
+          icon.setAttribute("data-lucide", "pause");
+          feedbackIcon.setAttribute("data-lucide", "play");
+          triggerTapFeedback(feedback);
+          lucide.createIcons();
+        }).catch(err => {
+          console.warn("Autoplay audio blocked, attempting muted play:", err);
+          vid.muted = true;
+          vid.play();
+          updateMuteButton(idx);
+        });
+      } else {
+        vid.pause();
+        pausedOverlay.style.display = "flex";
+        label.textContent = "Play";
+        icon.setAttribute("data-lucide", "play");
+        feedbackIcon.setAttribute("data-lucide", "pause");
+        triggerTapFeedback(feedback);
+        lucide.createIcons();
+      }
+      updateMasterPlayState();
+    }
+
+    function triggerTapFeedback(feedbackEl) {
+      feedbackEl.classList.remove('opacity-0');
+      feedbackEl.classList.add('opacity-100');
+      setTimeout(() => {
+        feedbackEl.classList.remove('opacity-100');
+        feedbackEl.classList.add('opacity-0');
+      }, 350);
+    }
+
+    function toggleSingleMute(idx) {
+      const vid = videos[idx];
+      vid.muted = !vid.muted;
+      updateMuteButton(idx);
+    }
+
+    function updateMuteButton(idx) {
+      const vid = videos[idx];
+      const btn = document.getElementById(`muteBtn${idx}`);
+      const icon = document.getElementById(`muteIcon${idx}`);
+      if (vid.muted) {
+        icon.setAttribute("data-lucide", "volume-x");
+        btn.className = "p-1.5 bg-slate-800 hover:bg-slate-700 text-red-400 rounded-lg transition cursor-pointer";
+      } else {
+        icon.setAttribute("data-lucide", "volume-2");
+        btn.className = "p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg transition cursor-pointer";
+      }
+      lucide.createIcons();
+    }
+
+    function restartSingleVideo(idx) {
+      const vid = videos[idx];
+      vid.currentTime = 0;
+      vid.play();
+      document.getElementById(`pausedOverlay${idx}`).style.display = "none";
+      document.getElementById(`singlePlayLabel${idx}`).textContent = "Pause";
+      document.getElementById(`singlePlayIcon${idx}`).setAttribute("data-lucide", "pause");
+      lucide.createIcons();
+    }
+
+    function onSingleScrub(idx, val) {
+      const vid = videos[idx];
+      const dur = vid.duration || 27.8;
+      vid.currentTime = (val / 100) * dur;
+    }
+
+    videos.forEach((vid, idx) => {
+      vid.addEventListener("play", () => {
+        document.getElementById(`pausedOverlay${idx}`).style.display = "none";
+        document.getElementById(`singlePlayLabel${idx}`).textContent = "Pause";
+        document.getElementById(`singlePlayIcon${idx}`).setAttribute("data-lucide", "pause");
+        lucide.createIcons();
+        updateMasterPlayState();
+      });
+
+      vid.addEventListener("pause", () => {
+        document.getElementById(`pausedOverlay${idx}`).style.display = "flex";
+        document.getElementById(`singlePlayLabel${idx}`).textContent = "Play";
+        document.getElementById(`singlePlayIcon${idx}`).setAttribute("data-lucide", "play");
+        lucide.createIcons();
+        updateMasterPlayState();
+      });
+
+      vid.addEventListener("timeupdate", () => {
+        const cur = vid.currentTime;
+        const dur = vid.duration || 27.8;
+        const timeLabel = document.getElementById(`singleTime${idx}`);
+        const scrubber = document.getElementById(`singleScrubber${idx}`);
+        if (timeLabel) timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+        if (scrubber) scrubber.value = (cur / dur) * 100;
+
+        if (idx === 0 && !isScrubbing) {
+          masterScrubber.value = (cur / dur) * 100;
+          currentTimeLabel.textContent = formatTime(cur);
+          durationLabel.textContent = formatTime(dur);
+        }
+      });
+
+      vid.addEventListener("ended", () => {
+        if (isLooping) {
+          vid.currentTime = 0;
+          vid.play();
+        } else {
+          document.getElementById(`pausedOverlay${idx}`).style.display = "flex";
+          document.getElementById(`singlePlayLabel${idx}`).textContent = "Play";
+          document.getElementById(`singlePlayIcon${idx}`).setAttribute("data-lucide", "play");
+          lucide.createIcons();
+        }
+      });
+    });
+
+    function updateMasterPlayState() {
+      const anyPlaying = videos.some(v => !v.paused);
+      isMasterPlaying = anyPlaying;
+      if (anyPlaying) {
+        playLabel.textContent = "Pause All";
+        playIcon.setAttribute("data-lucide", "pause");
+      } else {
+        playLabel.textContent = "Play All Synced";
+        playIcon.setAttribute("data-lucide", "play");
+      }
+      lucide.createIcons();
+    }
+
+    masterPlayBtn.addEventListener("click", () => {
+      if (isMasterPlaying) {
+        videos.forEach(v => v.pause());
+      } else {
+        const leadTime = video1.currentTime || 0;
+        videos.forEach(v => {
+          v.currentTime = leadTime;
+          v.play().catch(e => console.warn("Sync play exception:", e));
+        });
+      }
+    });
+
+    masterScrubber.addEventListener("mousedown", () => { isScrubbing = true; });
+    masterScrubber.addEventListener("touchstart", () => { isScrubbing = true; });
+
+    masterScrubber.addEventListener("input", (e) => {
+      const dur = video1.duration || 27.8;
+      const targetTime = (e.target.value / 100) * dur;
+      currentTimeLabel.textContent = formatTime(targetTime);
+      videos.forEach(v => { v.currentTime = targetTime; });
+    });
+
+    window.addEventListener("mouseup", () => { isScrubbing = false; });
+    window.addEventListener("touchend", () => { isScrubbing = false; });
+
+    loopToggleBtn.addEventListener("click", () => {
+      isLooping = !isLooping;
+      loopToggleBtn.querySelector("span").textContent = `Loop: ${isLooping ? 'On' : 'Off'}`;
+      loopToggleBtn.className = isLooping 
+        ? "flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl border border-slate-700 text-xs font-medium transition cursor-pointer"
+        : "flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl border border-slate-700 text-xs font-medium transition cursor-pointer";
+    });
+
+    function setOverlay(name) {
+      const screens = document.querySelectorAll(".smartphone-screen");
+      screens.forEach(s => {
+        if (name === "none") {
+          s.removeAttribute("data-overlay");
+        } else {
+          s.setAttribute("data-overlay", name);
+        }
+      });
+    }
+
+    overlaySelector.addEventListener("change", (e) => {
+      setOverlay(e.target.value);
+    });
+    setOverlay(overlaySelector.value);
+
+    updateMuteButton(0);
+    updateMuteButton(1);
+    updateMuteButton(2);
+
+    // ==========================================
+    // THEATER MODAL LOGIC
+    // ==========================================
+    const theaterModal = document.getElementById("theaterModal");
+    const theaterVideo = document.getElementById("theaterVideo");
+    const theaterTitle = document.getElementById("theaterTitle");
+    let currentTheaterIndex = 2;
+
+    const videoSources = [
+      { name: "Phone 1: Previous Baseline", src: "/media/output/ULvplwBTbQk_short_1.mp4?v=sync1", btn: "theaterBtn0", color: "bg-amber-600" },
+      { name: "Phone 2: OpenShorts Engine", src: "/media/output/demo_openshorts_edl.mp4?v=sync1", btn: "theaterBtn1", color: "bg-blue-600" },
+      { name: "Phone 3: HotClip Master", src: "/media/output/demo_hotclip_master.mp4?v=sync1", btn: "theaterBtn2", color: "bg-emerald-600" }
+    ];
+
+    function openTheaterModal(idx) {
+      currentTheaterIndex = idx;
+      // Pause individual grid videos
+      videos.forEach(v => v.pause());
+
+      const sourceObj = videoSources[idx];
+      const curTime = videos[idx].currentTime || 0;
+      
+      theaterVideo.src = sourceObj.src;
+      theaterVideo.currentTime = curTime;
+      theaterTitle.textContent = sourceObj.name;
+      theaterModal.classList.remove("hidden");
+      theaterModal.classList.add("flex");
+
+      updateTheaterTabs(idx);
+      theaterVideo.play().catch(() => {});
+    }
+
+    function switchTheaterVideo(idx) {
+      const curTime = theaterVideo.currentTime;
+      currentTheaterIndex = idx;
+      const sourceObj = videoSources[idx];
+      theaterVideo.src = sourceObj.src;
+      theaterVideo.currentTime = curTime;
+      theaterTitle.textContent = sourceObj.name;
+      updateTheaterTabs(idx);
+      theaterVideo.play().catch(() => {});
+    }
+
+    function updateTheaterTabs(activeIdx) {
+      videoSources.forEach((s, i) => {
+        const btn = document.getElementById(s.btn);
+        if (i === activeIdx) {
+          btn.className = `px-2.5 py-1 rounded ${s.color} text-white font-medium transition`;
+        } else {
+          btn.className = `px-2.5 py-1 rounded text-slate-400 hover:text-white transition`;
+        }
+      });
+    }
+
+    function closeTheaterModal() {
+      theaterVideo.pause();
+      // Sync back to grid video
+      videos[currentTheaterIndex].currentTime = theaterVideo.currentTime;
+      theaterModal.classList.remove("flex");
+      theaterModal.classList.add("hidden");
+    }
+
+    function toggleBrowserFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Keyboard controls for theater
+    window.addEventListener("keydown", (e) => {
+      if (!theaterModal.classList.contains("hidden")) {
+        if (e.key === "Escape") {
+          closeTheaterModal();
+        } else if (e.key === " ") {
+          e.preventDefault();
+          if (theaterVideo.paused) theaterVideo.play();
+          else theaterVideo.pause();
+        } else if (e.key.toLowerCase() === "f") {
+          toggleBrowserFullscreen();
+        } else if (e.key === "1") {
+          switchTheaterVideo(0);
+        } else if (e.key === "2") {
+          switchTheaterVideo(1);
+        } else if (e.key === "3") {
+          switchTheaterVideo(2);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

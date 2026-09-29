@@ -17,11 +17,19 @@ output/
 *.ass
 *.json
 
+# External benchmark clones
+external_repos/
+repos/
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Environment variables
+# Environment variables & secrets
 .env
+.env.*
+client_secret*.json
+credentials*.json
+scratch/

@@ -459,6 +459,13 @@ def publish_short():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/compare")
+def compare_page():
+    """Side-by-side phone comparison page between Baseline, OpenShorts, and HotClip."""
+    return render_template("compare.html")
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)
+
 
